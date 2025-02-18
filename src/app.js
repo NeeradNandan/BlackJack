@@ -71,12 +71,12 @@ while (balance > 0 && !playerBusted) {
         gameStats(playerHand, dealerHand, true);
         console.log(`Your Hand Value: ${playerHandValue}\n`);
         console.log(`Dealer's Hand Value: ${dealerHandValue}\n`);
-        if (playerHandValue > 21) {
-            console.log('\nBust! You lost!\n');
-            balance -= bet;
+        if (playerHandValue === 21 && playerHand.length === 2) {
+            console.log('\nBlackJack! You won!\n');
+            balance += 1.5 * bet;
             console.log(`Final Balance: ₹${balance}`);
         }
-        else if (dealerHandValue > 21 || playerHandValue > dealerHandValue) {
+        else if (dealerHandValue > 21 || playerHandValue > dealerHandValue && playerHandValue < 21) {
             console.log('\nYou won!\n');
             balance += bet;
             console.log(`Final Balance: ₹${balance}`);
@@ -86,9 +86,9 @@ while (balance > 0 && !playerBusted) {
             balance -= bet;
             console.log(`Final Balance: ₹${balance}`);
         }
-        else if (playerHandValue === 21) {
-            console.log('\nBlackJack! You won!\n');
-            balance += 1.5 * bet;
+        else if (playerHandValue > 21) {
+            console.log('\nBust! You lost!\n');
+            balance -= bet;
             console.log(`Final Balance: ₹${balance}`);
         }
         else if (playerHandValue === dealerHandValue && playerHandValue <= 21 && dealerHandValue <= 21) {
