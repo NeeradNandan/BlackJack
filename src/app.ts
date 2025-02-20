@@ -84,7 +84,7 @@ while (balance > 0 && !playerBusted) {
 
         if (playerHandValue === 21 && playerHand.length === 2) {
             console.log ('\nBlackJack! You won!\n');
-            balance += 1.5 * bet;
+            balance += 2.5 * bet;
             console.log (`Final Balance: ₹${balance}`);
         } else if (dealerHandValue > 21 || playerHandValue > dealerHandValue && playerHandValue < 21) {
             console.log ('\nYou won!\n');
