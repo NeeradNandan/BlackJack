@@ -1,26 +1,41 @@
-import { shuffleArray } from './utils'
+import Card from "./card";
+import { IDealable, Suit } from "./types";
+import { shuffleArray } from "./utils";
 
-const SUIT: Readonly <string[]> = ['♠', '♣', '♥', '♦'];
-const VALUE: Readonly <string[]> = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-
-class Deck {
-    readonly cards: string[] = [];
-
-    constructor () {
-        this.cards = [];
-        this.initializeDeck ();
+class Deck implements IDealable {
+    private deck: Card[] = [];
+    
+    constructor() {
+        this.reset()
     }
 
-    private initializeDeck () {
-        for ( let i: number = 0; i < SUIT.length; i ++ ) {
-            for ( let j: number = 0; j < VALUE.length; j ++ ) {
-                this.cards.push ( SUIT[ i ] + VALUE[ j ] );
+    reset() {
+        const cards = this.makeDeck();
+        this.deck = shuffleArray(cards);
+    }
+
+    deal(num: number): Card[] {
+        const dealtCards: Card[] = [];
+
+        for (let i = 0; i < num; i++) {
+            const card = this.deck.pop();
+            dealtCards.push(card!)
+        }
+
+        return dealtCards
+    }
+
+    private makeDeck() {
+        const cards: Card[] = []
+        const suits = [Suit.Hearts, Suit.Diamonds, Suit.Clubs, Suit.Spades]
+        for (let suit =0; suit < 4; suit++) {
+            for (let value = 1; value <= 13; value++) {
+                const card = new Card(value, suits[suit])
+                cards.push(card);
             }
         }
+        return cards
     }
 }
 
-const deck = new Deck();
-export const cardList: string[] = shuffleArray(deck.cards);
-
-
+export default Deck

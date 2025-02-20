@@ -1,118 +1,84 @@
-import promptSync from 'prompt-sync';
-import { cardList } from "./deck";
+import Deck from "./deck";
+import { ICard } from "./types";
+import { getBet, getDecision, getHandValue, getStrHand } from "./utils";
 
-const prompt = promptSync();
+function playerTurn(playerHand: ICard[], deck: Deck): number {
+  let handValue = getHandValue(playerHand);
 
+  while (true) {
+    const action = getDecision();
+    if (action !== "hit") return handValue;
+
+    playerHand.push(deck.deal(1)[0]);
+    handValue = getHandValue(playerHand);
+    console.log(`Your hand: ${getStrHand(playerHand)} (Total: ${handValue})`);
+
+    if (handValue > 21) {
+      return handValue;
+    }
+  }
+}
+
+function dealerTurn(dealerHand: ICard[], deck: Deck): number {
+  let handValue = getHandValue(dealerHand);
+
+  while (true) {
+    console.log(
+      `Dealer's hand: ${getStrHand(dealerHand)} (Total: ${handValue})`
+    );
+    if (handValue >= 17) return handValue;
+
+    dealerHand.push(deck.deal(1)[0]);
+    handValue = getHandValue(dealerHand);
+  }
+}
+
+let dealerHand: ICard[] = [];
+let playerHand: ICard[] = [];
+const deck: Deck = new Deck();
 let balance = 100;
 
+while (balance > 0) {
+  console.log(`\nPlayer funds $${balance}`);
+  const bet = getBet(balance);
+  balance -= bet;
 
-function gameStats (playerHand: string[], dealerHand: string[], showDealerHand: boolean) {
-    console.log ('\nDealer\'s hand:' );
-    if (showDealerHand) {
-        console.log (`\n ${dealerHand}`)
-    } else {
-        console.log (`\n ${dealerHand[0]} [Hidden]`)
-    }
+  // Deal the cards
+  deck.reset();
+  playerHand = deck.deal(2);
+  dealerHand = deck.deal(2);
 
-    console.log ('\nYour Hand:');
-    console.log (`\n ${playerHand}\n`);
+  const playerValue = getHandValue(playerHand);
+  const dealerValue = getHandValue(dealerHand);
+
+  console.log(`Your hand: ${getStrHand(playerHand)} (Total: ${playerValue})`);
+  console.log(`Dealer's hand: ${getStrHand(dealerHand, true)}`);
+  if (playerValue === 21) {
+    balance += bet * 2.5;
+    console.log(`Blackjack! You won $${bet * 2.5}`);
+    continue;
+  } else if (dealerValue === 21) {
+    console.log(`Dealer's hand: ${getStrHand(dealerHand)}, (Total: 21)`);
+    console.log("Dealer has Blackjack, you lost...");
+    continue;
+  }
+
+  const finalPlayerValue = playerTurn(playerHand, deck);
+  if (finalPlayerValue > 21) {
+    console.log("You bust and lost...");
+    continue;
+  }
+  const finalDealerValue = dealerTurn(dealerHand, deck);
+  if (finalDealerValue > 21 || finalPlayerValue > finalDealerValue) {
+    balance += bet * 2;
+    console.log(`You won $${bet * 2}`);
+  }
+  else if (finalDealerValue === finalPlayerValue) {
+    balance += bet
+    console.log("Push (tie).")
+  } else {
+    console.log("You lost to the dealer.")
+  }
 }
 
-function calculateHandValue (hand: string[]) {
-    let value = 0;
-    let aces = 0;
-    for (let i = 0; i < hand.length; i++) {
-        const faceValue = hand[i].slice(1);
-
-        if (['K', 'Q', 'J'].includes(faceValue)) {
-            value += 10;
-        } else if (faceValue === 'A') {
-            value += 11;
-            aces += 1;
-        } else {
-            value += parseInt(faceValue, 10);
-        }
-    }
-    while (value > 21 && aces > 0) {
-        value -= 10;
-        aces -= 1;
-    }
-    return value
-}
-
-let playerBusted = false;
-
-while (balance > 0 && !playerBusted) {
-
-    let dealerHand = cardList.splice (-2, 2);
-    let playerHand = cardList.splice(-2, 2);
-    let remainingCards: string[] = cardList;
-
-    const bet = Number(prompt('How much will you bet?'));
-
-    if ( bet > 0 && bet <= balance ) {
-
-        let playerHandValue = calculateHandValue(playerHand);
-        let dealerHandValue = calculateHandValue(dealerHand);
-
-        while ( playerHandValue <= 21 ) {
-
-            gameStats ( playerHand, dealerHand, false );
-            console.log ( `\nYour Hand Value: ${ playerHandValue } \n` );
-
-            const action = prompt('Do you want to (h)it ot (s)tand?');
-
-            if (action === 'h') {
-                playerHand.push(remainingCards.pop()!);
-                playerHandValue = calculateHandValue(playerHand);
-                console.log (`Your hand: ${playerHand} and value: ${playerHandValue}`);
-            } else if (action === 's') {
-                console.log ('\nYou chose to stand! \n');
-                break;
-            }
-        }
-
-        while (dealerHandValue < 17) {
-            console.log ('\nDealer draws a card\n')
-            dealerHand.push(remainingCards.pop()!);
-            dealerHandValue = calculateHandValue(dealerHand);
-        }
-
-        gameStats(playerHand, dealerHand, true);
-        console.log (`Your Hand Value: ${playerHandValue}\n`);
-        console.log (`Dealer's Hand Value: ${dealerHandValue}\n`);
-
-        if (playerHandValue === 21 && playerHand.length === 2) {
-            console.log ('\nBlackJack! You won!\n');
-            balance += 1.5 * bet;
-            console.log (`Final Balance: ₹${balance}`);
-        } else if (dealerHandValue > 21 || playerHandValue > dealerHandValue && playerHandValue < 21) {
-            console.log ('\nYou won!\n');
-            balance += bet;
-            console.log (`Final Balance: ₹${balance}`);
-        } else if (dealerHandValue > playerHandValue) {
-            console.log ('\nYou lost!\n');
-            balance -= bet;
-            console.log (`Final Balance: ₹${balance}`);
-        } else if (playerHandValue > 21) {
-            console.log ('\nBust! You lost!\n');
-            balance -= bet;
-            console.log (`Final Balance: ₹${balance}`);
-        } else if (playerHandValue === dealerHandValue && playerHandValue <= 21 && dealerHandValue <= 21) {
-            console.log ('\nPush! It"s a tie\n');
-            console.log (`Final Balance: ₹${balance}`);
-        }
-    } else {
-        console.log ('Your betting amount should be a number greater than zero\n')
-        playerBusted = true;
-    }
-}
-
-
-
-
-
-
-
-
-
+console.log("You ran out of money!");
